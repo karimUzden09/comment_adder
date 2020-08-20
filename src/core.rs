@@ -9,12 +9,12 @@ use std::io::prelude::*;
 #[macro_export]
 macro_rules! info_message {
     () => {
-        let message ="[info]";
-        println!("{}", message.green());
+        let message = "[info]";
+        println!("{}", message.bold().green());
     };
     ($($arg:tt)*) => {
         let message ="[info]";
-        print!("{} ",message.green());
+        print!("{} ",message.bold().green());
         println!($($arg)*);
     }
 }
