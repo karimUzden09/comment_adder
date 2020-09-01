@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use walkdir::{WalkDir};
 use std::{fs,io::BufWriter, io::BufReader, io::Write,io::Read, fs::File, path::Path};
 use std::collections::VecDeque;
-use std::io::prelude::*;
+pub use std::io::prelude::*;
 
 #[macro_export]
 macro_rules! info_message {
@@ -43,6 +43,20 @@ fn pirnt_json_settings(json_settings : &CommentStruct) {
     for comment in json_settings.comments.iter(){
         info_message!("{} {}","Comments from the settings file:".bold().blue(),comment.bold());
     }
+}
+
+pub fn settigs_file () -> std::io::Result<()> {
+    let mut settings_fille = File::open("settings.json").expect("Unable to open");
+    let mut data = String::new();
+    settings_fille.read_to_string(&mut data)?;
+    
+    
+    let json_settings:CommentStruct = serde_json::from_str(&data).expect("Json was not well format");
+ 
+    pirnt_json_settings(&json_settings);
+    Ok(())
+
+
 }
 
 pub fn delete_comment_v2(path : &&str)->std::io::Result<()> {

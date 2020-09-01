@@ -1,6 +1,6 @@
 [package]
 name = "comment_adder"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Uzdenov Karim <mrkarim777@gmail.com>"]
 edition = "2018"
 
@@ -13,3 +13,4 @@ walkdir = "2"
 mktemp = "0.4"
 clap = "2"
 colored = "2"
+structopt = "0.3"
