@@ -1,6 +1,6 @@
 [package]
 name = "comment_adder"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Uzdenov Karim <mrkarim777@gmail.com>"]
 edition = "2018"
 
@@ -14,3 +14,12 @@ mktemp = "0.4"
 clap = "2"
 colored = "2"
 structopt = "0.3"
+indicatif = "0.15"
+time = "0.2"
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "bench"
+path = "E:/rust_projects/comment_adder/src/benches/bench.rs"
+harness = false
