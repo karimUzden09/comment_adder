@@ -1,8 +1,9 @@
 use super::core::{
-    delete_comment_v2,
+
     settigs_file,
-    add_comment_progres,
     scun_wraper,
+    add_comment_progres_paralel
+    ,delate_comment_parallel
 
 };
 use structopt::StructOpt;
@@ -40,8 +41,8 @@ enum Opt {
 pub fn run() ->std::io::Result<()> {
     let opt = Opt::from_args();
     match opt  {
-        Opt::Add {file_path} => add_comment_progres(&file_path.as_str())?,
-        Opt::Del{file_path} => delete_comment_v2(&file_path.as_str())?,
+        Opt::Add {file_path} => add_comment_progres_paralel(&file_path.as_str()),
+        Opt::Del{file_path} => delate_comment_parallel(&file_path.as_str()),
         Opt::Settings => settigs_file()?,
         //Opt::Addprog{file_path} => add_comment_progres(&file_path.as_str())?,
         Opt::Scun{file_path} =>  scun_wraper(&file_path.as_str())?

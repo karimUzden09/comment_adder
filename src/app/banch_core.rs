@@ -8,6 +8,10 @@ use indicatif::ProgressBar;
 //use std::time::{Instant};
 pub use std::io::prelude::*;
 
+extern crate rayon;
+use rayon::prelude::*;
+use std::sync::{Arc,Mutex};
+
 use super::core::*;
 use crate::info_message;
 
@@ -98,6 +102,42 @@ pub fn scunn_filles_bench(path : &&str,settings_path : &str) -> Option<u64> {
     Some(files_count)
     
 }
+
+#[inline(always)]
+pub fn paralel_scan_files_bench (path : &&str, settings_path : &str) -> Option<usize> {
+    let mut settings_fille = File::open(settings_path).expect("Unable to open");
+    let mut data = String::new();
+    settings_fille.read_to_string(&mut data).unwrap();
+    
+    let json_settings:CommentStruct = serde_json::from_str(&data).expect("Json was not well format");
+     
+    let extensions_count = json_settings.file_name_extension.len();
+
+    let summ_vector = Arc::new(Mutex::new(Vec::new()));
+    
+     let par_vec: Vec<_> = (0..extensions_count).into_par_iter().map(|ext| {
+        let mut files_count : usize = 0;
+
+        for entry in WalkDir::new(path).into_iter() {
+            let entry = entry.unwrap();
+            let file_name = entry.path().file_name().unwrap().to_str().unwrap();
+
+            if file_name.ends_with(&json_settings.file_name_extension[ext]) {
+                files_count += 1;
+
+                //println!("{}",files_count);
+            }
+        }
+        summ_vector.lock().unwrap().push(files_count);
+
+     }).collect();
+
+
+     let  files_count = summ_vector.lock().unwrap().iter().sum();
+     info_message!("files count {}",files_count);
+    Some(files_count)
+}
+
 
 pub fn add_comment_v2_bench(path : &&str,settings_path : &str)->std::io::Result<()> {
     let mut settings_fille = File::open(settings_path).expect("Unable to open");

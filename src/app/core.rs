@@ -4,10 +4,16 @@ use serde::{Deserialize, Serialize};
 use walkdir::{WalkDir};
 use std::{fs,io::BufWriter, io::BufReader, io::Write,io::Read, fs::File, path::Path};
 use std::collections::VecDeque;
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar,ProgressStyle};
 use std::time::{Instant};
 pub use std::io::prelude::*;
 use crate::info_message;
+
+use std::sync::{Arc,Mutex};
+
+
+extern crate rayon;
+use rayon::prelude::*;
 
 
 
@@ -52,151 +58,185 @@ pub fn settigs_file () -> std::io::Result<()> {
 
 }
 
-#[inline(always)]
-pub fn delete_comment_v2(path : &&str)->std::io::Result<()> {
+
+
+pub fn delate_comment_parallel(path : &&str) {
     let total = Instant::now();
 
     let mut settings_fille = File::open("settings.json").expect("Unable to open");
     let mut data = String::new();
-    settings_fille.read_to_string(&mut data)?;
+    settings_fille.read_to_string(&mut data).expect("erorre of reading settings.json");
     
     
     let json_settings:CommentStruct = serde_json::from_str(&data).expect("Json was not well format");
-    let files_count = scunn_filles(path).unwrap();
-    let bar = ProgressBar::new(files_count);
+    paralel_scan_files(path).unwrap();
+
+    let pb = ProgressBar::new_spinner();
+    pb.enable_steady_tick(120);
+    pb.set_style(
+        ProgressStyle::default_spinner()
+            
+            .tick_strings(&[
+                "▹▹▹▹▹",
+                "▸▹▹▹▹",
+                "▹▸▹▹▹",
+                "▹▹▸▹▹",
+                "▹▹▹▸▹",
+                "▹▹▹▹▸",
+                "▪▪▪▪▪",
+            ])
+            .template("{spinner:.green} {msg}"),
+    );
+    pb.set_message("Deleting comments...");
  
     pirnt_json_settings(&json_settings);
 
-    for extensions in json_settings.file_name_extension.iter() {
-        let walker = WalkDir::new(path).into_iter();
-        for entry in walker {
+    let extensions_count = json_settings.file_name_extension.len();
+
+    let par_vec: Vec<_> = (0..extensions_count).into_par_iter().map(|ext| {
+        for entry in WalkDir::new(path).into_iter() {
+
             let entry = entry.unwrap();
             let file_name = entry.path().file_name().unwrap().to_str().unwrap();
-            if file_name.ends_with(extensions) {
-                //info_message!("{}",file_name);
+            if file_name.ends_with(&json_settings.file_name_extension[ext]) {
 
-               
-    
-              let mut strings_buffer = lines_from_file(entry.path()); 
+                let mut strings_buffer =  lines_from_file(entry.path()); 
 
-                
                 for comm in json_settings.comments.iter() {
                     strings_buffer.retain(|x| x != comm);
+                    let  new_file = File::create(entry.path()).expect("Unable create file");
+                    for comment in &strings_buffer {
+                    let mut writer = BufWriter::new(&new_file);
+                    writeln!(&mut writer,"{}",comment).unwrap();
                                    
                  }
-
-                 
-                 let  new_file = File::create(entry.path()).expect("Unable create file");
-                 for comment in strings_buffer {
-                 let mut writer = BufWriter::new(&new_file);
-                 writeln!(&mut writer,"{}",comment)?;
-                
-                 }     
-                
-    
-                 bar.inc(1);
-
-            }
-    
             
+            }
         }
     }
-    bar.finish();
+
+    }).collect();
+    
+    pb.finish();
     println!("Total time: {}",total.elapsed().as_secs_f32());
     println!("{}","-------------------------DONE-------------------------".bold().green());
+
+}
+
+
+
+
+pub fn scun_wraper(path : &&str) -> std::io::Result<()> {
+   paralel_scan_files(path).expect("Errore to scun");
     Ok(())
 }
 
+
+
 #[inline(always)]
-pub fn scunn_filles(path : &&str) -> Option<u64> {
+pub fn paralel_scan_files (path : &&str) -> Option<usize> {
     let mut settings_fille = File::open("settings.json").expect("Unable to open");
     let mut data = String::new();
     settings_fille.read_to_string(&mut data).unwrap();
-    let mut files_count : u64 = 0;
     
     let json_settings:CommentStruct = serde_json::from_str(&data).expect("Json was not well format");
+    let extensions_count = json_settings.file_name_extension.len();
 
-    for extensions in json_settings.file_name_extension.iter() {
-        let walker = WalkDir::new(path).into_iter();
-        
-        
-        for entry in walker {
+    let summ_vector = Arc::new(Mutex::new(Vec::new()));
+    
+     let par_vec: Vec<_> = (0..extensions_count).into_par_iter().map(|ext| {
+        let mut files_count : usize = 0;
+
+        for entry in WalkDir::new(path).into_iter() {
             let entry = entry.unwrap();
             let file_name = entry.path().file_name().unwrap().to_str().unwrap();
-            if file_name.ends_with(extensions) {
+
+            if file_name.ends_with(&json_settings.file_name_extension[ext]) {
                 files_count += 1;
 
+                //println!("Debug: {}",files_count);
             }
         }
-    }
+        summ_vector.lock().unwrap().push(files_count);
 
-    info_message!("files count {}",files_count);
+     }).collect();
+
+
+     let files_count = summ_vector.lock().unwrap().iter().sum();
+     info_message!("files count {}",files_count);
     Some(files_count)
-    
 }
 
-pub fn scun_wraper(path : &&str) -> std::io::Result<()> {
-    scunn_filles(path).unwrap();
-    Ok(())
-}
 
 #[inline(always)]
-pub fn add_comment_progres(path : &&str) ->std::io::Result<()>  {
+pub fn add_comment_progres_paralel(path : &&str)  {
+    
     let total = Instant::now();
     let mut settings_fille = File::open("settings.json").expect("Unable to open");
     let mut data = String::new();
-    settings_fille.read_to_string(&mut data)?;
+    settings_fille.read_to_string(&mut data).unwrap();
     
-    let files_count = scunn_filles(path).unwrap();
-    let bar = ProgressBar::new(files_count);
+  
+    paralel_scan_files(path).unwrap();
     
     let mut  json_settings:CommentStruct = serde_json::from_str(&data).expect("Json was not well format");
     pirnt_json_settings(&json_settings);
     
     json_settings.comments.reverse();
-    for extensions in json_settings.file_name_extension.iter() {
-        let walker = WalkDir::new(path).into_iter();
-        for entry in walker {
+
+    let extensions_count = json_settings.file_name_extension.len();
+
+    let pb = ProgressBar::new_spinner();
+    pb.enable_steady_tick(120);
+    pb.set_style(
+        ProgressStyle::default_spinner()
+           
+            .tick_strings(&[
+                "▹▹▹▹▹",
+                "▸▹▹▹▹",
+                "▹▸▹▹▹",
+                "▹▹▸▹▹",
+                "▹▹▹▸▹",
+                "▹▹▹▹▸",
+                "▪▪▪▪▪",
+            ])
+            .template("{spinner:.green} {msg}"),
+    );
+    pb.set_message("Addition comments...");
+    let par_vec: Vec<_> = (0..extensions_count).into_par_iter().map(|ext| {
+        for entry in WalkDir::new(path).into_iter() {
             let entry = entry.unwrap();
             let file_name = entry.path().file_name().unwrap().to_str().unwrap();
-            if file_name.ends_with(extensions) {
-                //info_message!("{}",file_name);
-    
-               let mut file = fs::OpenOptions::new()
-                    .write(true)
-                    .append(true)
-                    .read(true)
-                    .open(entry.path())
-                    .unwrap();
-                let mut temp_data = String::new();
-                
-                file.read_to_string(&mut temp_data)?;
-    
-                 let mut string_buffer: VecDeque<String> = VecDeque::new();
+
+            if file_name.ends_with(&json_settings.file_name_extension[ext]) {
+
+                let mut file = fs::OpenOptions::new()
+                .write(true)
+                .append(true)
+                .read(true)
+                .open(entry.path())
+                .unwrap();
+            let mut temp_data = String::new();
+            file.read_to_string(&mut temp_data).unwrap();
+            let mut string_buffer: VecDeque<String> = VecDeque::new();
                  
-                 string_buffer.push_back(temp_data);
-                 
-                 for comments in json_settings.comments.iter() {
-                    string_buffer.push_front(comments.clone());
-                 }
-                let new_file = File::create(entry.path()).expect("Unable create file");
+            string_buffer.push_back(temp_data);
+
+            for comments in json_settings.comments.iter() {
+                string_buffer.push_front(comments.clone());
+             }
+             let new_file = File::create(entry.path()).expect("Unable create file");
                 for comment in string_buffer {
                     let mut writer = BufWriter::new(&new_file);
-                    writeln!(&mut writer,"{}",comment)?;
-                }     
-                
-                bar.inc(1);
-    
+                    writeln!(&mut writer,"{}",comment).unwrap();
+                }  
+
+
             }
-    
-            
         }
-    }
-    bar.finish();
-    println!("Total time: {}",total.elapsed().as_secs_f32());
+
+     }).collect();
+     pb.finish();
+     println!("Total time: {}",total.elapsed().as_secs_f32());
     info_message!("{}","-------------------------DONE-------------------------".bold().green());
-    Ok(())
-
 }
-
-
