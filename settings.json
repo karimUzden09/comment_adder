@@ -1,6 +1,4 @@
-// Thi is settings fille used in comment_adder
-
 {
-    "file_name_extension":[".txt",".etvg"], // File extnsions
-    "comments":["//Uzdenov Karim 2020 ","//using namespace std"] // Comments will be added to fille
+    "file_name_extension":[".txt",".etvg"],
+    "comments":["//Uzdenov Karim 2020 ","//using namespace std"]
 }
