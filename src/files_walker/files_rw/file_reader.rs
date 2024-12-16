@@ -4,16 +4,24 @@ use crate::errors::Result;
 use std::{
     fs::{self, File},
     io::{self, Write},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 pub fn write_text(path: &Path, comment: String) -> Result<()> {
     let readed_file = fs::read_to_string(path)?;
+    // check comment for new line (/n) in the end of the comment;
+    // if have /n continume
+    // else havent /n add to comment and write to the file
     let res = comment + &readed_file;
     prepend_file(res.as_bytes(), path)?;
     Ok(())
 }
+pub fn remove_text(path: &Path, comment: String) -> Result<()> {
+    let readed_file = fs::read_to_string(path)?;
+    // how match patterns?
 
+    Ok(())
+}
 fn prepend_file(data: &[u8], file_path: &Path) -> Result<()> {
     // Create a temporary file
     let tmp_path = Temp::new_file()?;
