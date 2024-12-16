@@ -15,6 +15,14 @@ pub struct CommentAdderConfig {
     pub file_formats: HashSet<String>,
     // if max deph = 0 then
     pub max_deph: Option<usize>,
+    pub work_mode: Mode,
+    pub patterns_match: Option<usize>,
+}
+#[derive(Debug, Deserialize, Default)]
+pub enum Mode {
+    #[default]
+    AddText,
+    RemoveText,
 }
 
 impl BaseConfig for CommentAdderConfig {
@@ -23,21 +31,25 @@ impl BaseConfig for CommentAdderConfig {
         let config = Config::builder()
             .add_source(config::File::with_name(CONFIG_NAME))
             .build()?;
-        let mut res = config.try_deserialize()?;
-        Ok(res)
+        let mut config = config.try_deserialize::<CommentAdderConfig>()?;
+        config.chceck_and_process_text();
+        Ok(config)
     }
 }
 
 impl CommentAdderConfig {
     pub fn get_walkdir(&self) -> WalkDir {
-        let walk_dir = if let Some(max_depth) = self.max_deph {
-            WalkDir::new(&self.path).max_depth(max_depth)
-        } else {
-            WalkDir::new(&self.path)
-        };
-        walk_dir
+        if let Some(max_depth) = self.max_deph {
+            return WalkDir::new(&self.path).max_depth(max_depth);
+        }
+        WalkDir::new(&self.path)
     }
-
+    pub fn chceck_and_process_text(&mut self) {
+        if self.text.ends_with("\n") {
+            return;
+        }
+        self.text.push_str("\n");
+    }
     pub fn check_end_line(&self) -> bool {
         self.text.ends_with("\n")
     }

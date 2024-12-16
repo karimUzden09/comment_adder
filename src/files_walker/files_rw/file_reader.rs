@@ -7,7 +7,7 @@ use std::{
     path::Path,
 };
 
-pub fn write_text(path: &Path, comment: String) -> Result<()> {
+pub fn add_text(path: &Path, comment: String) -> Result<()> {
     let readed_file = fs::read_to_string(path)?;
     // check comment for new line (/n) in the end of the comment;
     // if have /n continume
@@ -16,10 +16,11 @@ pub fn write_text(path: &Path, comment: String) -> Result<()> {
     prepend_file(res.as_bytes(), path)?;
     Ok(())
 }
-pub fn remove_text(path: &Path, comment: String) -> Result<()> {
+pub fn remove_text(path: &Path, comment: &str, patterns_match: Option<usize>) -> Result<()> {
+    let patterns_match = patterns_match.unwrap_or(0);
     let readed_file = fs::read_to_string(path)?;
-    // how match patterns?
-
+    let res = readed_file.replacen(comment, "", patterns_match);
+    prepend_file(res.as_bytes(), path)?;
     Ok(())
 }
 fn prepend_file(data: &[u8], file_path: &Path) -> Result<()> {

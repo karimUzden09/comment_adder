@@ -1,0 +1,5 @@
+text = '//Dev by Uzdenov Karim'
+path = 'C:\Dev\linux'
+file_formats = ['c','h']
+work_mode = "AddText"
+
