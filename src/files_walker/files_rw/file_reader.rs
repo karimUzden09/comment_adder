@@ -3,17 +3,18 @@ use mktemp::Temp;
 use crate::errors::Result;
 use std::{
     fs::{self, File},
-    io::{self, Write},
+    io::{self, BufWriter, Write},
     path::Path,
 };
 
 pub fn add_text(path: &Path, comment: String) -> Result<()> {
-    let readed_file = fs::read_to_string(path)?;
+    //let readed_file = fs::read_to_string(path)?;
+    let mut writer = BufWriter::new(File::create(path)?);
+    write!(&mut writer, "{}", comment)?;
     // check comment for new line (/n) in the end of the comment;
     // if have /n continume
     // else havent /n add to comment and write to the file
-    let res = comment + &readed_file;
-    prepend_file(res.as_bytes(), path)?;
+    //prepend_file(res.as_bytes(), path)?;
     Ok(())
 }
 pub fn remove_text(path: &Path, comment: &str, patterns_match: Option<usize>) -> Result<()> {

@@ -2,8 +2,8 @@ use std::{collections::HashSet, path::PathBuf};
 
 use super::traits::BaseConfig;
 use config::Config;
+use jwalk::WalkDir;
 use serde::Deserialize;
-use walkdir::WalkDir;
 //for erly dev errors
 use crate::errors::Result;
 
