@@ -48,7 +48,7 @@ impl CommentAdderConfig {
         if self.text.ends_with("\n") {
             return;
         }
-        self.text.push_str("\n");
+        self.text.push('\n');
     }
     pub fn check_end_line(&self) -> bool {
         self.text.ends_with("\n")

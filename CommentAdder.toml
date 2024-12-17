@@ -1,5 +1,4 @@
-text = '//Dev by Uzdenov Karim v5'
+text = '//Dev by Uzdenov Karim v1'
 path = 'C:\Dev\linux'
-file_formats = ['c','h']
+file_formats = ['c', 'h']
 work_mode = "AddText"
-
