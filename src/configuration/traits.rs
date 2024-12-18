@@ -1,11 +1,18 @@
-//for erly dev errors
+use crate::errors::Result;
+use jwalk::WalkDir;
+use std::{path::Path, sync::atomic::AtomicUsize};
 
-pub trait BaseConfig {
+pub trait BaseConfig: Send + Sync {
     type Output;
     fn build_config() -> Self::Output;
+    fn build_walker_dir(&self) -> WalkDir;
 }
 
-pub trait ComentAdderConfigTrait: BaseConfig {
-    type Walker;
-    fn build_walker(&self) -> Self::Walker;
+pub trait FileProccesing: BaseConfig {
+    type FileProcessingOutput;
+    fn process(
+        &self,
+        path: &Path,
+        counter: Option<&AtomicUsize>,
+    ) -> Result<Self::FileProcessingOutput>;
 }
