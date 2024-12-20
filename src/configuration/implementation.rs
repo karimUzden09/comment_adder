@@ -10,7 +10,7 @@ use jwalk::WalkDir;
 use super::{
     comment_adder::{CommentAdderConfig, CONFIG_NAME},
     traits::{BaseConfig, FileProccesing},
-    utils::add_comment,
+    utils::{add_comment, remove_comment},
 };
 use crate::errors::Result;
 
@@ -43,7 +43,9 @@ impl FileProccesing for CommentAdderConfig {
             if self.file_formats.contains(extension) {
                 match self.work_mode {
                     super::comment_adder::Mode::AddText => add_comment(path, self.text.clone())?,
-                    super::comment_adder::Mode::RemoveText => unimplemented!(),
+                    super::comment_adder::Mode::RemoveText => {
+                        remove_comment(path, &self.text, self.patterns_match)?
+                    }
                 }
                 counter.map(|c| c.fetch_add(1, Ordering::SeqCst));
             }
